@@ -1,0 +1,35 @@
+采集相关：
+
+ 
+    Matcher contentM=Pattern.compile("m=vod-detail-id-([a-zA-Z0-9]+).html\"").matcher(content); 
+      while (contentM.find()){  
+ /**********1*******/
+
+	      vurl="http://www.xyz/?"+contentM.group(0).replaceAll("\" class=\"video-pic","").replaceAll("\"","");
+	      out.println("vurl="+vurl+"<br<br>");//得到第0组——整个匹配  http://www.xyz/?m=vod-detail-id-I3022D.html
+           vbody=RemoteCallUtil.getUrlValue(vurl,"utf-8");
+
+
+        
+		   Matcher titleM=Pattern.compile("<title>([\\s\\S]*)</title>").matcher(vbody); 
+            if(titleM.find()){   
+	           vtitle=titleM.group(0).trim().replaceAll("<title>","").replaceAll("</title>","").replaceAll("正在播放","").replaceAll(" ","").replaceAll("\\.mp4","").replaceAll("\\.mov","").replaceAll("\\.mkv","");
+			   out.println("vtitle="+vtitle+"<br<br>");
+	        } //titleM-end  
+
+           
+		    titleM=Pattern.compile("<div class=\"read-img\">([\\s\\S]*) <!-- 标题 -->").matcher(vbody); 
+            if(titleM.find()){   
+	           vimags=titleM.group(0).trim().replaceAll(" ","").replaceAll("<divclass=\"read-img\"><imgsrc=\"","").replaceAll("\"alt=\"\"></div><!--标题-->","");
+			   out.println("vimags="+vimags+"<br<br>");
+	        } //titleM-end  
+             
+			 vurl=vurl.replaceAll("detail","neiron");
+			  out.println("vurl="+vurl+"<br<br>");
+           
+
+			 titleM=Pattern.compile("varvPath=([\\s\\S]*)index.m3u8").matcher(RemoteCallUtil.getUrlValue(vurl,"utf-8").replaceAll(" ","")); 
+            if(titleM.find()){   
+	           vlink=titleM.group(0).replaceAll("varvPath=\'","");
+			  
+	        } //vli
