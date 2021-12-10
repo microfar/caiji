@@ -1,4 +1,4 @@
-# caiji
+# 采集https请求apache httpClient  https支持
 数据采集，改进https请求apache工具类原始对HTTPS SSL版本1.0报错的问题， //添加SSL1.2证书支持
 	if (httpClient == null) {
 			httpClient = HttpClients.createDefault();
