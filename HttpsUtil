@@ -1,0 +1,247 @@
+package service.net;
+
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.nio.charset.Charset;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.net.ssl.SSLContext;
+
+import net.sf.json.JSONObject;
+
+import org.apache.commons.httpclient.HttpStatus;
+import org.apache.http.HttpEntity;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.ssl.SSLContexts;
+import org.apache.http.util.EntityUtils;
+import org.apache.log4j.Logger;
+
+ 
+ 
+
+
+/**
+ * https请求apache工具类
+ */
+public class HttpsUtil {
+	private static Logger logger = Logger.getLogger(HttpsUtil.class);
+	private static final int timeout = 5000;
+	private static final String POST = null;
+	private static final String GET = null;
+
+	 
+	
+	/**
+	 * @author 向服务器HTTPS发送json返回数据
+	 * @param args
+	 * @throws Exception
+	 */
+	public static String  httpsPost(String url, Map<String, String> MapBodyJson, Map<String, String> MapHeader) throws URISyntaxException, ClientProtocolException, IOException {
+		return doSendPost(url, MapBodyJson,MapHeader, null);
+	}
+	
+	public static String  httpsGet(String url, Map<String, String> MapBodyJson, Map<String, String> MapHeader) throws URISyntaxException, ClientProtocolException, IOException {
+		return doSendGet( url, MapBodyJson,MapHeader, null);
+	
+	}
+	
+	
+	private static String doSendPost(String url, Map<String, String> MapBodyJson,Map<String, String> MapHeader, CloseableHttpClient httpClient) throws URISyntaxException, IOException, ClientProtocolException {
+		    
+		String httpStatusCode="";
+		if (httpClient == null) {
+			httpClient = HttpClients.createDefault();
+		}
+	 
+		  //添加SSL1.2证书支持
+		SSLContext ctx = null;
+		try {
+			ctx = SSLContexts.custom().useProtocol("TLSv1.2").build();
+		} catch (Exception e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
+	    httpClient = HttpClients.custom().setSSLSocketFactory(new SSLConnectionSocketFactory(ctx)).build();
+		 
+		
+		URIBuilder uriBuilder = new URIBuilder(url);
+		HttpPost httpPost = new HttpPost(uriBuilder.build());
+		RequestConfig requestConfig = RequestConfig.custom().setSocketTimeout(timeout).setConnectionRequestTimeout(timeout).setConnectTimeout(timeout).build();
+		 
+		httpPost.setConfig(requestConfig);
+		 
+		
+	    //设定HTTP头
+		 System.out.println("MapHeader: -----> " );
+		
+	 
+		 for (String Statekey : MapHeader.keySet()) { 
+			 httpPost.setHeader(Statekey, MapHeader.get(Statekey));
+			 System.out.println("  "+Statekey  + "->" + MapHeader.get(Statekey));
+			 
+		 }
+		 
+		    // MapHeader.forEach((k, v) -> {System.out.println("key:value = " + k + ":" + v);});
+	        // httpPost.setHeader(entry.getKey(), entry.getValue());
+	        //System.out.println("  "+entry.getKey() + "->" + entry.getValue());
+	    
+		 
+		 String StrBodyJson = JSONObject.fromObject(MapBodyJson).toString();
+		 
+	    System.out.println("MapBodyJson:--> \r\n   "+StrBodyJson);  
+	 
+ 		httpPost.setEntity(new StringEntity(StrBodyJson));////放入json到请求数据 
+ 
+		//System.err.println("Server api Callback info:  " + httpPost.getURI() + " sending...");
+		
+		CloseableHttpResponse response = httpClient.execute(httpPost);
+		int statusCode = response.getStatusLine().getStatusCode();
+		String rs = null;
+		if (statusCode == HttpStatus.SC_OK) {
+			//System.err.println("回调POST请求发送成功");
+			httpStatusCode=statusCode+"";
+			HttpEntity entity = response.getEntity();
+			ContentType contentType = ContentType.getOrDefault(entity);
+			Charset charset = contentType.getCharset();
+			rs = EntityUtils.toString(entity, charset);
+			//System.err.println("回调请求返回数据 is=>" + rs);
+		} else {
+			httpPost.abort();
+		 
+			httpStatusCode=statusCode+"";
+			rs="{\"ret_code\":\""+httpStatusCode+"\",\"ret_msg\":\"请求出错.回调http状态码："+statusCode + "：POST请求发送失败！\"}";
+		}
+         
+		response.close();
+		return rs;
+	}
+	
+	/**
+	 * 
+	 * @param GET
+	 * @throws ClientProtocolException
+	 * @throws URISyntaxException
+	 * @throws IOException
+	 */
+	 
+	private static String doSendGet(String url, Map<String, String> MapBodyJson,Map<String, String> MapHeader, CloseableHttpClient httpClient) throws URISyntaxException, IOException, ClientProtocolException {
+	    
+		String httpStatusCode="";
+		if (httpClient == null) {
+			httpClient = HttpClients.createDefault();
+		}
+	 
+	   //添加SSL1.2证书支持
+		SSLContext ctx = null;
+		try {
+			ctx = SSLContexts.custom().useProtocol("TLSv1.2").build();
+		} catch (Exception e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
+	    httpClient = HttpClients.custom().setSSLSocketFactory(new SSLConnectionSocketFactory(ctx)).build();
+		 
+		
+		URIBuilder uriBuilder = new URIBuilder(url);
+		HttpGet httpGet = new HttpGet(uriBuilder.build());
+		RequestConfig requestConfig = RequestConfig.custom().setSocketTimeout(timeout).setConnectionRequestTimeout(timeout).setConnectTimeout(timeout).build();
+		 
+		httpGet.setConfig(requestConfig);
+		 
+		
+	    //设定HTTP头
+		 System.out.println("MapHeader: -----> " );
+		
+	 
+		 for (String Statekey : MapHeader.keySet()) { 
+			 httpGet.setHeader(Statekey, MapHeader.get(Statekey));
+			 System.out.println("  "+Statekey  + "->" + MapHeader.get(Statekey));
+			 
+		 }
+		 
+		   // MapHeader.forEach((k, v) -> {System.out.println("key:value = " + k + ":" + v);});
+	       // httpPost.setHeader(entry.getKey(), entry.getValue());
+	        //System.out.println("  "+entry.getKey() + "->" + entry.getValue());
+	    
+		 
+		 String StrBodyJson = JSONObject.fromObject(MapBodyJson).toString();
+		 
+	    System.out.println("MapBodyJson:--> \r\n   "+StrBodyJson);  
+	 
+	  //  httpGet.setEntity(new StringEntity(StrBodyJson));////放入json到请求数据 
+ 
+		//System.err.println("Server api Callback info:  " + httpPost.getURI() + " sending...");
+		
+		CloseableHttpResponse response = httpClient.execute(httpGet);
+		int statusCode = response.getStatusLine().getStatusCode();
+		String rs = null;
+		if (statusCode == HttpStatus.SC_OK) {
+			//System.err.println("回调POST请求发送成功");
+			httpStatusCode=statusCode+"";
+			HttpEntity entity = response.getEntity();
+			ContentType contentType = ContentType.getOrDefault(entity);
+			Charset charset = contentType.getCharset();
+			rs = EntityUtils.toString(entity, charset);
+			//System.err.println("回调请求返回数据 is=>" + rs);
+		} else {
+			httpGet.abort();
+		 
+			httpStatusCode=statusCode+"";
+			rs="{\"ret_code\":\""+httpStatusCode+"\",\"ret_msg\":\"请求出错.回调http状态码："+statusCode + "：POST请求发送失败！\"}";
+		}
+         
+		response.close();
+		return rs;
+	}
+
+	
+	/*
+	 * 测试方法
+	 */
+	
+	public static void main(String[] args) throws ClientProtocolException, URISyntaxException, IOException {
+		
+		System.err.println("00000000000000000");
+		
+		Map<String, String> MapBodyJson = new HashMap<String, String>();
+		Map<String, String> MapHeader = new HashMap<String, String>();
+		 //https://cn.developers.tron.network/reference#%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8api-key
+		//7faa0d16-cda3-4836-a698-1e96c9016a6f
+
+		 
+		 
+	 
+		MapHeader.put("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.93 Safari/537.36");
+		MapHeader.put("cookie", "ttcid=75b4012ef35241b9a284cd631d21e79e31; tt_webid=7039655942644073991; csrftoken=76cd68ec971287f2656668c7f2ee35e5; _S_IPAD=0; _S_WIN_WH=400_670; _S_DPR=2; tt_webid=7039661772047025700; FRM=new; UM_distinctid=17d9ef445cf185-04098a5f1947af-978153c-13c680-17d9ef445d080; WIN_WH=1440_757; PIXIEL_RATIO=1; __ac_nonce=061b2ec2a0062765fb9db; __ac_signature=_02B4Z6wo00f01VtQs4QAAIDB21JJx2colZFbdLcAADdqBn0JseiRb6T.23jnECS.RyL7jBpWR2xgcSOQ1L7SurhmmSKO1lBvaqXO.6YOtCqproCgPlLqJyJ-0LALMqVo08nUWFymkmCh4E9jc6; MONITOR_WEB_ID=1defcc97-965a-4ac4-ba5b-3e135734c77d; tt_scid=PydCWtSVZNMZYU76oEnYVz7f6GphShRbQWr0gBX7.bxsbR4aHYtpun8JbPwxQhLU099c; ttwid=1|jx6wQTq996ir6oN2BZ6w3uYfWKloip_RdKV9LvDJGyc|1639115827|bfeed105664fb52ea353a798faed1a4c9ee7d6a7c22db7dbea425233c19db292; s_v_web_id=verify_kwzz8uu0_MPOCKBxU_mScZ_4Sep_8uzb_jJTwhyqDrE3m");
+	     
+		 
+		MapBodyJson.put("address","TF9n7CFgP31EN9z2nfiiEjQm85UShCRWwR");
+		MapBodyJson.put("visible","true");
+		 
+	 
+		
+		 
+		 String result = HttpsUtil.httpsGet("https://www.toutiao.com/a7039869712993403405/?log_from=2093c809dfac9_1639115825747", MapBodyJson,MapHeader);
+		 
+		 System.out.println("server info="+result);
+		
+		  MapBodyJson.clear();
+		  MapHeader.clear();
+		 
+		
+		}
+	 
+}
